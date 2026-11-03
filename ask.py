@@ -4,6 +4,10 @@ import re
 import sqlite3
 import urllib.request
 
+W = 0.1            # 키워드 보너스 비중 (평가로 결정)
+THRESHOLD = 0.60   # 거절 기준 (평가로 결정: 거절 정확도 100% 유지)
+MARGIN = 0.1       # 1등과 점수 차이가 이 안쪽인 조항만 함께 전달
+
 
 def get_embedding(text):
     data = {"model": "bge-m3", "input": text}
@@ -26,8 +30,12 @@ def cosine_similarity(a, b):
     return dot / (len_a * len_b)
 
 
+def bigrams(s):
+    s = re.sub(r"[^가-힣a-zA-Z0-9]", "", s)
+    return {s[i:i+2] for i in range(len(s) - 1)}
+
+
 def generate(prompt):
-    """Ollama에 프롬프트 보내고 답변 글자 받아오기"""
     data = {
         "model": "qwen2.5:7b",
         "prompt": prompt,
@@ -44,43 +52,48 @@ def generate(prompt):
 
 
 def answer(user_dept, question):
-    # 1. 질문만 좌표로 변환
     q_vec = get_embedding(question)
+    q_grams = bigrams(question)
 
-    # 2. DB에서 내 부서가 볼 수 있는 조항만 꺼내기
+    # 1. DB에서 전체 조항 읽기 (IDF는 전체 기준으로 계산해야 해서)
     conn = sqlite3.connect("rules.db")
     cur = conn.cursor()
-    cur.execute(
-        "SELECT title, text, embedding FROM docs WHERE dept = '전체' OR dept = ?",
-        (user_dept,)
-    )
-    rows = cur.fetchall()
+    cur.execute("SELECT title, dept, text, embedding FROM docs")
+    all_rows = cur.fetchall()
     conn.close()
 
-    # 3. 전부 점수 매기고 상위 3개
+    # 2. 드문 정도(IDF) 계산
+    doc_grams = [bigrams(title + text) for title, _, text, _ in all_rows]
+    N = len(all_rows)
+    df = {}
+    for grams in doc_grams:
+        for g in grams:
+            df[g] = df.get(g, 0) + 1
+    idf = {g: math.log(N / c) for g, c in df.items()}
+    q_total = sum(idf[g] for g in q_grams if g in idf)
+
+    # 3. 권한 있는 조항만 하이브리드 점수 계산
     scored = []
-    for title, text, embedding in rows:
-        c_vec = json.loads(embedding)
-        score = cosine_similarity(q_vec, c_vec)
-        scored.append((score, title, text))
+    for (title, dept, text, emb), grams in zip(all_rows, doc_grams):
+        if dept != "전체" and dept != user_dept:      # ★ 권한 필터
+            continue
+        emb_score = cosine_similarity(q_vec, json.loads(emb))
+        kw_score = (sum(idf[g] for g in q_grams & grams) / q_total) if q_total else 0
+        scored.append((emb_score + W * kw_score, title, text))
 
     scored.sort(reverse=True)
     top = scored[:3]
-
     for score, title, _ in top:
         print(f"{score:.3f}  {title}")
 
     # 4. 검증: 1등이 기준 미만이면 거절
-    THRESHOLD = 0.55
     if not top or top[0][0] < THRESHOLD:
         best_title = top[0][1] if top else None
         best_score = top[0][0] if top else None
         return "규정에서 찾을 수 없습니다.", best_title, best_score
 
-    # 1등과 점수 차이가 작은 것만 함께 전달 (잡음 줄이기)
-    MARGIN = 0.1
     best = top[0][0]
-    passed = [(s, t, x) for s, t, x in top if s >= THRESHOLD and best - s <= MARGIN]
+    passed = [(s, t, x) for s, t, x in top if best - s <= MARGIN]
     context = "\n\n".join(x for _, _, x in passed)
     titles = ", ".join(t for _, t, _ in passed)
 
@@ -98,7 +111,7 @@ def answer(user_dept, question):
 """
     result = generate(prompt)
 
-    # 6. 출력 검증: 중국어(한자)가 섞였으면 한 번 다시 생성
+    # 6. 출력 검증: 중국어 섞이면 한 번 재생성
     if re.search(r"[\u4e00-\u9fff]", result):
         print("⚠ 중국어 섞임 감지 → 재생성")
         result = generate(prompt + "\n\n주의: 이전 답변에 중국어가 섞였다. 한국어로만, 짧게 다시 답해.")
@@ -106,9 +119,8 @@ def answer(user_dept, question):
     return result, titles, best
 
 
-# ---------- 테스트 ----------
 if __name__ == "__main__":
-    print(answer("영업팀", "입사 1년 지나면 연차 며칠이야?"))
+    print(answer("영업팀", "급여명세서 꼭 줘야 해?"))
     print(answer("영업팀", "야근하면 수당 더 받아?"))
-    print(answer("영업팀", "점심시간은 몇 분 줘야 해?"))
+    print(answer("영업팀", "임원 성과급 얼마까지 줘?"))
     print(answer("영업팀", "법카 한도는?"))
