@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>근로기준법 Q&A</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --border: #e2e5ea;
+    --text: #1c2330;
+    --muted: #6a7280;
+    --accent: #1f4e8c;
+    --accent-soft: #eaf0f8;
+    --danger-soft: #fdf3f2;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- 상단 ---------- */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .header-title { font-weight: 700; font-size: 16px; }
+  .header-sub { color: var(--muted); font-size: 13px; }
+  .badge {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-weight: 600;
+  }
+
+  /* ---------- 대화 영역 ---------- */
+  main {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .chat {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 8px;
+  }
+
+  .intro {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .intro h1 { margin: 0 0 6px; font-size: 18px; }
+  .intro p { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  .msg { margin-top: 16px; display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 85%;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    white-space: pre-wrap;        /* 줄바꿈 그대로 표시 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .msg.user .bubble {
+    background: var(--accent);
+    color: #fff;
+  }
+  .msg.bot .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .msg.bot.notfound .bubble { background: var(--danger-soft); }
+
+  .sources { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .sources-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+  details { font-size: 13px; margin-top: 4px; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  .source-text {
+    margin-top: 6px;
+    padding: 10px;
+    background: var(--bg);
+    border-radius: 6px;
+    color: var(--text);
+    max-height: 240px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  .feedback { margin-top: 10px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .fb-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .fb-btn:hover:not(:disabled) { border-color: var(--accent); }
+  .fb-btn:disabled { opacity: .5; cursor: default; }
+
+  .loading { color: var(--muted); }
+  .dots::after {
+    content: "";
+    animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; }
+  }
+
+  /* ---------- 하단 입력 ---------- */
+  .composer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .composer-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px 16px 10px;
+  }
+  form { display: flex; gap: 8px; }
+  input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 12px;
+    font: inherit;
+  }
+  input[type="text"]:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  button.send {
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0 18px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.send:disabled { opacity: .5; cursor: default; }
+  .notice {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">법</div>
+    <div>
+      <div class="header-title">근로기준법 Q&A</div>
+      <div class="header-sub">조문을 근거로 답변합니다</div>
+    </div>
+    <span class="badge">베타</span>
+  </div>
+</header>
+
+<main id="scroll">
+  <div class="chat" id="chat">
+    <section class="intro" id="intro">
+      <h1>근로기준법이 궁금할 때 물어보세요</h1>
+      <p>연차, 야근 수당, 해고, 임금 등 근로기준법 조문에서 근거를 찾아 답변합니다. 근거를 찾지 못하면 모른다고 답해요.</p>
+      <div class="chips">
+        <button class="chip" type="button">입사 1년 지나면 연차 며칠이야?</button>
+        <button class="chip" type="button">야근하면 수당 더 받아?</button>
+        <button class="chip" type="button">점심시간은 몇 분 줘야 해?</button>
+        <button class="chip" type="button">퇴사하면 밀린 월급은 언제 받아?</button>
+        <button class="chip" type="button">해고하려면 미리 알려줘야 해?</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="composer">
+  <div class="composer-inner">
+    <form id="form">
+      <input type="text" id="q" placeholder="질문을 입력하세요" maxlength="300" autocomplete="off" required>
+      <button class="send" id="send" type="submit">질문</button>
+    </form>
+    <div class="notice">
+      법률 자문이 아닌 참고용 정보입니다. 정확한 판단은 고용노동부 고객상담센터(1350)나 노무사와 상담하세요.
+      서비스 개선을 위해 질문과 답변이 익명으로 저장되니 이름, 회사명 등 개인정보는 입력하지 마세요.
+    </div>
+  </div>
+</div>
+
+<script>
+  const chat = document.getElementById("chat");
+  const scroll = document.getElementById("scroll");
+  const form = document.getElementById("form");
+  const input = document.getElementById("q");
+  const sendBtn = document.getElementById("send");
+  const intro = document.getElementById("intro");
+
+  // 글자를 넣을 때는 항상 textContent 사용 (innerHTML 금지)
+  // → 답변이나 질문에 <script> 같은 게 들어 있어도 실행되지 않고 글자로만 보임 (XSS 방지)
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function scrollDown() {
+    scroll.scrollTop = scroll.scrollHeight;
+  }
+
+  function addUser(text) {
+    const msg = el("div", "msg user");
+    msg.appendChild(el("div", "bubble", text));
+    chat.appendChild(msg);
+    scrollDown();
+  }
+
+  function addLoading() {
+    const msg = el("div", "msg bot");
+    const bubble = el("div", "bubble loading");
+    bubble.appendChild(el("span", "dots", "관련 조문을 찾는 중"));
+    msg.appendChild(bubble);
+    chat.appendChild(msg);
+    scrollDown();
+    return msg;
+  }
+
+  function addFeedback(bubble, id) {
+    const box = el("div", "feedback");
+    box.appendChild(el("span", "", "도움이 됐나요?"));
+    const up = el("button", "fb-btn", "👍");
+    const down = el("button", "fb-btn", "👎");
+    up.type = down.type = "button";
+
+    async function send(value) {
+      up.disabled = down.disabled = true;
+      try {
+        await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: id, value: value })
+        });
+        box.lastChild.after(el("span", "", "의견 감사합니다"));
+      } catch (e) {
+        up.disabled = down.disabled = false;
+      }
+    }
+    up.addEventListener("click", () => send(1));
+    down.addEventListener("click", () => send(-1));
+    box.append(up, down);
+    bubble.appendChild(box);
+  }
+
+  function fillBot(msg, data) {
+    msg.innerHTML = "";
+    if (!data.found) msg.classList.add("notfound");
+    const bubble = el("div", "bubble", data.answer);
+
+    if (data.sources && data.sources.length) {
+      const src = el("div", "sources");
+      src.appendChild(el("div", "sources-label", "근거 조문"));
+      data.sources.forEach(s => {
+        const d = el("details");
+        d.appendChild(el("summary", "", s.title));
+        d.appendChild(el("div", "source-text", s.text));
+        src.appendChild(d);
+      });
+      bubble.appendChild(src);
+    }
+
+    if (data.id) addFeedback(bubble, data.id);
+    msg.appendChild(bubble);
+    scrollDown();
+  }
+
+  async function ask(question) {
+    question = question.trim();
+    if (!question) return;
+
+    if (intro) intro.style.display = "none";
+    addUser(question);
+    input.value = "";
+    input.disabled = sendBtn.disabled = true;
+    const loading = addLoading();
+
+    try {
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        fillBot(loading, { answer: data.error || "요청을 처리하지 못했습니다.", found: false });
+      } else {
+        fillBot(loading, data);
+      }
+    } catch (e) {
+      fillBot(loading, { answer: "서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.", found: false });
+    } finally {
+      input.disabled = sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    ask(input.value);
+  });
+
+  document.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => ask(chip.textContent));
+  });
+</script>
+</body>
+</html>

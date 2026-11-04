@@ -51,7 +51,7 @@ def generate(prompt):
         return json.loads(res.read())["response"]
 
 
-def answer(user_dept, question):
+def answer(user_dept, question, only_law=False):
     q_vec = get_embedding(question)
     q_grams = bigrams(question)
 
@@ -76,6 +76,8 @@ def answer(user_dept, question):
     scored = []
     for (title, dept, text, emb), grams in zip(all_rows, doc_grams):
         if dept != "전체" and dept != user_dept:      # ★ 권한 필터
+            continue
+        if only_law and not title.startswith("근로기준법"):# 공개 데모용: 법 조문만
             continue
         emb_score = cosine_similarity(q_vec, json.loads(emb))
         kw_score = (sum(idf[g] for g in q_grams & grams) / q_total) if q_total else 0
